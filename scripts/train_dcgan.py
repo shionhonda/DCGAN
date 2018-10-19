@@ -62,7 +62,7 @@ def main():
             chainer.optimizer_hooks.WeightDecay(0.0001), 'hook_dec')
         return optimizer
     opt_gen = make_optimizer(gen)
-    opt_dis = make_optimizer(dis)
+    opt_dis = make_optimizer(dis, alpha=1e-4)
 
     if args.dataset == '':
         # Load the CIFAR10 dataset if args.dataset is not specified

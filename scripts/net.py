@@ -56,7 +56,7 @@ class Generator(chainer.Chain):
 
 class Discriminator(chainer.Chain):
 
-    def __init__(self, bottom_height=12, bottom_width=9, ch=512, wscale=0.02):
+    def __init__(self, bottom_height=12, bottom_width=9, ch=256, wscale=0.02):
         w = chainer.initializers.Normal(wscale)
         super(Discriminator, self).__init__()
         with self.init_scope():
@@ -84,4 +84,4 @@ class Discriminator(chainer.Chain):
         h = F.leaky_relu(add_noise(self.bn2_0(self.c2_0(h))))
         h = F.leaky_relu(add_noise(self.bn2_1(self.c2_1(h))))
         h = F.leaky_relu(add_noise(self.bn3_0(self.c3_0(h))))
-        return self.l4(h)
+        return F.dropout(self.l4(h), 0.3)
