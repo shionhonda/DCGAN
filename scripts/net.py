@@ -40,15 +40,15 @@ class Generator(chainer.Chain):
             self.bn3 = L.BatchNormalization(ch // 8)
 
     def make_hidden(self, batchsize):
-        return numpy.random.uniform(-1, 1, (batchsize, self.n_hidden, 1, 1))\
-            .astype(numpy.float32)
+        hidden = numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))
+        return numpy.clip(hidden, -1, 1).astype(numpy.float32)
 
     def __call__(self, z):
-        h = F.reshape(F.relu(self.bn0(self.l0(z))),
+        h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
-        h = F.relu(self.bn1(self.dc1(h)))
-        h = F.relu(self.bn2(self.dc2(h)))
-        h = F.relu(self.bn3(self.dc3(h)))
+        h = F.leaky_relu(self.bn1(self.dc1(h)))
+        h = F.leaky_relu(self.bn2(self.dc2(h)))
+        h = F.leaky_relu(self.bn3(self.dc3(h)))
         x = F.sigmoid(self.dc4(h))
         return x
 
@@ -76,19 +76,20 @@ class Discriminator(chainer.Chain):
             self.bn3_0 = L.BatchNormalization(ch // 1, use_gamma=False)
 
     def __call__(self, x):
+        ratio = 0.5
         h = add_noise(x)
         h = F.leaky_relu(add_noise(self.c0_0(h)))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn0_1(self.c0_1(h))))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn1_0(self.c1_0(h))))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn1_1(self.c1_1(h))))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn2_0(self.c2_0(h))))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn2_1(self.c2_1(h))))
-        h = F.dropout(h, 0.3)
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(add_noise(self.bn3_0(self.c3_0(h))))
-        h = F.dropout(h, 0.3)
-        return F.dropout(self.l4(h), 0.3)
+        h = F.dropout(h, ratio)
+        return F.dropout(self.l4(h), ratio)
