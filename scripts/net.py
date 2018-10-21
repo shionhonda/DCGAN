@@ -41,14 +41,18 @@ class Generator(chainer.Chain):
 
     def make_hidden(self, batchsize):
         hidden = numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))
-        return numpy.clip(hidden, -1, 1).astype(numpy.float32)
+        return hidden.astype(numpy.float32)
 
     def __call__(self, z):
+        ratio = 0.5
         h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
         h = F.leaky_relu(self.bn1(self.dc1(h)))
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn2(self.dc2(h)))
+        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn3(self.dc3(h)))
+        h = F.dropout(h, ratio)
         x = F.sigmoid(self.dc4(h))
         return x
 
