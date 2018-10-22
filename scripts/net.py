@@ -30,32 +30,43 @@ class Generator(chainer.Chain):
             w = chainer.initializers.Normal(wscale)
             self.l0 = L.Linear(self.n_hidden, bottom_height * bottom_width * ch,
                                initialW=w)
-            self.dc1 = L.Deconvolution2D(ch, ch // 2, 4, 2, 1, initialW=w)
-            self.dc2 = L.Deconvolution2D(ch // 2, ch // 4, 4, 2, 1, initialW=w)
-            self.dc3 = L.Deconvolution2D(ch // 4, ch // 8, 4, 2, 1, initialW=w)
-            self.dc4 = L.Deconvolution2D(ch // 8, 3, 3, 1, 1, initialW=w)
+            self.dc1_0 = L.Deconvolution2D(ch // 1, ch // 1, 3, 1, 1, initialW=w)
+            self.dc2_0 = L.Deconvolution2D(ch // 1, ch // 2, 4, 2, 1, initialW=w)
+            self.dc2_1 = L.Deconvolution2D(ch // 2, ch // 2, 3, 1, 1, initialW=w)
+            self.dc3_0 = L.Deconvolution2D(ch // 2, ch // 4, 4, 2, 1, initialW=w)
+            self.dc3_1 = L.Deconvolution2D(ch // 4, ch // 4, 3, 1, 1, initialW=w)
+            self.dc4_0 = L.Deconvolution2D(ch // 4, ch // 8, 4, 2, 1, initialW=w)
+            self.dc4_1 = L.Deconvolution2D(ch // 8, 3, 3, 1, 1, initialW=w)
             self.bn0 = L.BatchNormalization(bottom_height * bottom_width * ch)
-            self.bn1 = L.BatchNormalization(ch // 2)
-            self.bn2 = L.BatchNormalization(ch // 4)
-            self.bn3 = L.BatchNormalization(ch // 8)
+            self.bn1_0 = L.BatchNormalization(ch // 1)
+            self.bn2_0 = L.BatchNormalization(ch // 2)
+            self.bn2_1 = L.BatchNormalization(ch // 2)
+            self.bn3_0 = L.BatchNormalization(ch // 4)
+            self.bn3_1 = L.BatchNormalization(ch // 4)
+            self.bn4_0 = L.BatchNormalization(ch // 8)
 
     def make_hidden(self, batchsize):
-        hidden = numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))
-        return hidden.astype(numpy.float32)
+        return numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))\
+            .astype(numpy.float32)
 
     def __call__(self, z):
         ratio = 0.5
         h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
-        h = F.leaky_relu(self.bn1(self.dc1(h)))
+        h = F.leaky_relu(self.bn1_0(self.dc1_0(h)))
         h = F.dropout(h, ratio)
-        h = F.leaky_relu(self.bn2(self.dc2(h)))
+        h = F.leaky_relu(self.bn2_0(self.dc2_0(h)))
         h = F.dropout(h, ratio)
-        h = F.leaky_relu(self.bn3(self.dc3(h)))
+        h = F.leaky_relu(self.bn2_1(self.dc2_1(h)))
         h = F.dropout(h, ratio)
-        x = F.sigmoid(self.dc4(h))
+        h = F.leaky_relu(self.bn3_0(self.dc3_0(h)))
+        h = F.dropout(h, ratio)
+        h = F.leaky_relu(self.bn3_1(self.dc3_1(h)))
+        h = F.dropout(h, ratio)
+        h = F.leaky_relu(self.bn4_0(self.dc4_0(h)))
+        h = F.dropout(h, ratio)
+        x = F.sigmoid(self.dc4_1(h))
         return x
-
 
 
 class Discriminator(chainer.Chain):
