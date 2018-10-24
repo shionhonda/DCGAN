@@ -50,21 +50,14 @@ class Generator(chainer.Chain):
             .astype(numpy.float32)
 
     def __call__(self, z):
-        ratio = 0.5
         h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
         h = F.leaky_relu(self.bn1_0(self.dc1_0(h)))
-        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn2_0(self.dc2_0(h)))
-        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn2_1(self.dc2_1(h)))
-        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn3_0(self.dc3_0(h)))
-        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn3_1(self.dc3_1(h)))
-        h = F.dropout(h, ratio)
         h = F.leaky_relu(self.bn4_0(self.dc4_0(h)))
-        h = F.dropout(h, ratio)
         x = F.sigmoid(self.dc4_1(h))
         return x
 
