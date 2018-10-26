@@ -30,14 +30,18 @@ class Generator(chainer.Chain):
             w = chainer.initializers.Normal(wscale)
             self.l0 = L.Linear(self.n_hidden, bottom_height * bottom_width * ch,
                                initialW=w)
-            self.c1 = L.Convolution2D(ch, ch*2, 3, 1, 1, initialW=w)
-            self.c2 = L.Convolution2D(ch//2, ch, 3, 1, 1, initialW=w)
-            self.c3 = L.Convolution2D(ch//4, ch//2, 3, 1, 1, initialW=w)
-            self.c4 = L.Convolution2D(ch//8, 3, 3, 1, 1, initialW=w)
+            self.c1_0 = L.Convolution2D(ch, ch*2, 3, 1, 1, initialW=w)
+            self.c1_1 = L.Convolution2D(ch//2, ch*2, 4, 2, 1, initialW=w)
+            self.c2_0 = L.Convolution2D(ch//2, ch, 3, 1, 1, initialW=w)
+            self.c2_1 = L.Convolution2D(ch//4, ch, 4, 2, 1, initialW=w)
+            self.c3_0 = L.Convolution2D(ch//4, ch//2, 3, 1, 1, initialW=w)
+            self.c3_1 = L.Convolution2D(ch//8, 3, 3, 1, 1, initialW=w)
             self.bn0 = L.BatchNormalization(bottom_height * bottom_width * ch)
-            self.bn1 = L.BatchNormalization(ch*2)
-            self.bn2 = L.BatchNormalization(ch)
-            self.bn3 = L.BatchNormalization(ch//2)
+            self.bn1_0 = L.BatchNormalization(ch*2)
+            self.bn1_1 = L.BatchNormalization(ch*2)
+            self.bn2_0 = L.BatchNormalization(ch)
+            self.bn2_1 = L.BatchNormalization(ch)
+            self.bn3_0 = L.BatchNormalization(ch//2)
 
     def make_hidden(self, batchsize):
         hidden = numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))
@@ -46,10 +50,12 @@ class Generator(chainer.Chain):
     def __call__(self, z):
         h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
-        h = F.leaky_relu(F.depth2space(self.bn1(self.c1(h)), 2))
-        h = F.leaky_relu(F.depth2space(self.bn2(self.c2(h)), 2))
-        h = F.leaky_relu(F.depth2space(self.bn3(self.c3(h)), 2))
-        x = F.sigmoid(self.c4(h))
+        h = F.leaky_relu(F.depth2space(self.bn1_0(self.c1_0(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn1_1(self.c1_1(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn2_0(self.c2_0(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn2_1(self.c2_1(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn3_0(self.c3_0(h)), 2))
+        x = F.sigmoid(self.c3_1(h))
         return x
 
 
