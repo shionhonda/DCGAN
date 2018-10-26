@@ -30,14 +30,14 @@ class Generator(chainer.Chain):
             w = chainer.initializers.Normal(wscale)
             self.l0 = L.Linear(self.n_hidden, bottom_height * bottom_width * ch,
                                initialW=w)
-            self.dc1 = L.Deconvolution2D(ch, ch // 2, 4, 2, 1, initialW=w)
-            self.dc2 = L.Deconvolution2D(ch // 2, ch // 4, 4, 2, 1, initialW=w)
-            self.dc3 = L.Deconvolution2D(ch // 4, ch // 8, 4, 2, 1, initialW=w)
-            self.dc4 = L.Deconvolution2D(ch // 8, 3, 3, 1, 1, initialW=w)
+            self.c1 = L.Convolution2D(ch, ch*2, 3, 1, 1, initialW=w)
+            self.c2 = L.Convolution2D(ch//2, ch, 3, 1, 1, initialW=w)
+            self.c3 = L.Convolution2D(ch//4, ch//2, 3, 1, 1, initialW=w)
+            self.c4 = L.Convolution2D(ch//8, 3, 3, 1, 1, initialW=w)
             self.bn0 = L.BatchNormalization(bottom_height * bottom_width * ch)
-            self.bn1 = L.BatchNormalization(ch // 2)
-            self.bn2 = L.BatchNormalization(ch // 4)
-            self.bn3 = L.BatchNormalization(ch // 8)
+            self.bn1 = L.BatchNormalization(ch*2)
+            self.bn2 = L.BatchNormalization(ch)
+            self.bn3 = L.BatchNormalization(ch//2)
 
     def make_hidden(self, batchsize):
         hidden = numpy.random.normal(0, 0.5, (batchsize, self.n_hidden, 1, 1))
@@ -46,10 +46,10 @@ class Generator(chainer.Chain):
     def __call__(self, z):
         h = F.reshape(F.leaky_relu(self.bn0(self.l0(z))),
                       (len(z), self.ch, self.bottom_height, self.bottom_width))
-        h = F.leaky_relu(self.bn1(self.dc1(h)))
-        h = F.leaky_relu(self.bn2(self.dc2(h)))
-        h = F.leaky_relu(self.bn3(self.dc3(h)))
-        x = F.sigmoid(self.dc4(h))
+        h = F.leaky_relu(F.depth2space(self.bn1(self.c1(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn2(self.c2(h)), 2))
+        h = F.leaky_relu(F.depth2space(self.bn3(self.c3(h)), 2))
+        x = F.sigmoid(self.c4(h))
         return x
 
 
